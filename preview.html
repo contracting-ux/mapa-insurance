@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Future Insurance — ACA National Map</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --navy: #004b91;
+  --navy2: #003b77;
+  --blue: #00549c;
+  --blue2: #1b75bb;
+  --accent: #1687d9;
+  --accent2: #58b7ed;
+  --gold: #f6b23c;
+  --green: #25b96f;
+  --red: #e35264;
+  --muted: #6b7a90;
+  --card: #ffffff;
+  --border: #dbe5ef;
+  --text: #23364d;
+  --sub: #6b7a90;
+  --page: #f3f6fa;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', Arial, sans-serif;
+  background: var(--page);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.header {
+  background: linear-gradient(90deg, #004584 0%, #005cae 55%, #0b6ebb 100%);
+  border-bottom: 0;
+  padding: 0 2.1rem;
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(18,45,72,.12);
+}
+.header::after { display:none; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  min-width: 0;
+}
+.brand-logo {
+  flex-shrink: 0;
+}
+.brand-logo.custom-logo {
+  width: 138px;
+  height: 54px;
+  background: white;
+  border-radius: 2px;
+  padding: 7px 10px;
+  display: flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  overflow:hidden;
+}
+.brand-logo.custom-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display:block;
+}
+.brand-text h1 {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: #ffffff;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.brand-text p {
+  margin-top: 6px;
+  font-size: 9px;
+  color: rgba(255,255,255,.78);
+  letter-spacing: .9px;
+  text-transform: uppercase;
+}
+.hstats { display: flex; gap: .85rem; align-items:center; }
+.hstat {
+  min-width: 105px;
+  text-align: center;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #fff;
+}
+.hstat .v {
+  font-size:20px;
+  font-weight:800;
+  color:#fff;
+  display:block;
+}
+.hstat .l {
+  margin-top: 3px;
+  font-size:9px;
+  color:rgba(255,255,255,.78);
+  text-transform:uppercase;
+  letter-spacing:.7px;
+}
+
+/* TOOLBAR */
+.toolbar {
+  background: #1b2c45;
+  border-bottom: 0;
+  padding: 8px 2.1rem;
+  min-height: 44px;
+  display: flex;
+  align-items:center;
+  gap:.55rem;
+  flex-shrink:0;
+  flex-wrap:wrap;
+}
+.tb-sep { width:1px; height:25px; background:rgba(255,255,255,.16); margin:0 5px; }
+.tb-label {
+  font-size:9px;
+  color:#a9bdd5;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  margin-right:1px;
+}
+.tb-btn {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 5px;
+  color: #d5e3f5;
+  font-size: 11px;
+  font-family:'Inter',sans-serif;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  white-space: nowrap;
+}
+.tb-btn:hover { background: rgba(22,135,217,.28); color:#fff; border-color:rgba(255,255,255,.18); }
+.tb-btn.active { background: #0a68ae; color:#fff; border-color:#178ada; }
+.tb-btn svg { width:13px; height:13px; }
+select.tb-select {
+  background: #ffffff;
+  border: 1px solid #c8d5e4;
+  border-radius: 5px;
+  color: #24364d;
+  font-size:11px;
+  font-family:'Inter',sans-serif;
+  padding: 5px 28px 5px 8px;
+  cursor:pointer;
+  max-width:200px;
+}
+select.tb-select option { background:#fff; color:#24364d; }
+
+/* BODY */
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 12px;
+  padding: 12px 2.1rem 12px;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 175px;
+  flex-shrink: 0;
+  background: var(--blue);
+  border: 0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction:column;
+  overflow-y: auto;
+  transition: width .3s, padding .3s;
+  color:#fff;
+}
+.sidebar.collapsed { width: 0; overflow:hidden; }
+.sb-section { padding: .85rem; border-bottom: 1px solid rgba(255,255,255,.15); }
+.sb-title {
+  font-size:11px;
+  font-weight:800;
+  color:#ffffff;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:.65rem;
+}
+.carrier-chip {
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  padding:6px 6px;
+  border-radius:5px;
+  font-size:10px;
+  cursor:pointer;
+  transition:background .12s;
+  margin-bottom:3px;
+  border: 1px solid transparent;
+  color:#fff;
+}
+.carrier-chip:hover { background:rgba(255,255,255,.12); }
+.carrier-chip.selected { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.35); }
+.carrier-chip .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.carrier-chip .cname { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; color:#fff; }
+.carrier-chip .cpmmp { font-size:10px; color:#d9ecff; font-weight:700; white-space:nowrap; }
+
+/* CENTER */
+.center {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:0;
+  gap:12px;
+}
+.map-card {
+  flex:1;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+  box-shadow: 0 1px 5px rgba(20,44,70,.08);
+}
+.map-header {
+  padding:.75rem .9rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:0;
+  flex-shrink:0;
+}
+.map-title {
+  font-size:12px;
+  font-weight:800;
+  color:var(--blue);
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.zoom-wrap { display:flex; align-items:center; gap:6px; }
+.zoom-btn {
+  width:28px;
+  height:28px;
+  border-radius:5px;
+  border:1px solid #d8e2ee;
+  background:#fff;
+  color:var(--blue);
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .12s;
+}
+.zoom-btn:hover { background:#edf7ff; border-color:var(--accent); }
+.zoom-lbl { font-size:10px; color:var(--muted); min-width:35px; text-align:center; font-weight:600; }
+
+#map-wrap {
+  flex:1;
+  position:relative;
+  overflow:hidden;
+  cursor:grab;
+  background:#f7f8fa;
+  border:1px solid #e1e8f0;
+  border-radius:6px;
+  margin: 0 .75rem .55rem;
+}
+#map-wrap:active { cursor:grabbing; }
+#map-wrap svg { position:absolute; top:0; left:0; }
+
+.legend {
+  padding:.25rem .85rem .75rem;
+  display:flex;
+  gap:1.05rem;
+  align-items:center;
+  flex-wrap:wrap;
+  border-top:0;
+  flex-shrink:0;
+}
+.legend-item { display:flex; align-items:center; gap:.4rem; font-size:10px; color:var(--muted); }
+.legend-dot { width:10px; height:10px; border-radius:50%; }
+
+/* TABLE */
+.table-strip {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  height:190px;
+  flex-shrink:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  box-shadow: 0 1px 5px rgba(20,44,70,.08);
+}
+.table-strip table { width:100%; border-collapse:collapse; font-size:11px; }
+.table-strip thead th {
+  background:var(--blue);
+  color:#ffffff;
+  padding:8px 10px;
+  text-align:left;
+  position:sticky;
+  top:0;
+  z-index:2;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.table-strip tbody tr { cursor:pointer; transition:background .12s; }
+.table-strip tbody tr:hover { background:#edf7ff; }
+.table-strip tbody td {
+  padding:7px 10px;
+  border-bottom:1px solid #edf1f5;
+  font-size:11px;
+  white-space:nowrap;
+  color:#2a3c50;
+}
+.table-scroll { overflow:auto; flex:1; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:800; }
+.b-hi  { background:#e8f8f0; color:#15975a; }
+.b-mid { background:#fff3d8; color:#b87500; }
+.b-lo  { background:#eef5fc; color:#5c82ac; }
+
+/* RIGHT PANEL */
+.right {
+  width:215px;
+  flex-shrink:0;
+  background:#ffffff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  transition:width .3s;
+  box-shadow: 0 1px 5px rgba(20,44,70,.08);
+}
+.right.collapsed { width:0; overflow:hidden; border:0; }
+.r-section { padding:.85rem; border-bottom:1px solid #e8eef5; }
+.r-title {
+  font-size:11px;
+  font-weight:800;
+  color:var(--blue);
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  margin-bottom:.7rem;
+}
+.top-item {
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  padding:7px 6px;
+  border-radius:5px;
+  font-size:11px;
+  margin-bottom:3px;
+  cursor:pointer;
+  transition:background .12s;
+  border:1px solid transparent;
+  color:#2a3c50;
+}
+.top-item:hover { background:#edf7ff; }
+.top-item .rk { font-weight:800; color:var(--accent); width:16px; font-size:10px; }
+.top-item .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:600; }
+.top-item .vl { font-weight:800; color:var(--blue); font-size:11px; white-space:nowrap; }
+
+.state-detail {
+  background:#f5f9fd;
+  border:1px solid #dce8f5;
+  border-radius:7px;
+  padding:.75rem;
+  margin:.4rem 0 0;
+  display:none;
+}
+.state-detail.show { display:block; }
+.sd-name { font-size:14px; font-weight:800; color:var(--blue); margin-bottom:.5rem; }
+.sd-carrier { display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid #e1e8f0; gap:8px; }
+.sd-carrier:last-child { border:none; }
+.sd-carrier .sdc-pmmp { color:var(--blue); font-weight:800; }
+.sd-carrier .sdc-zero { color:var(--muted); }
+
+/* TOOLTIP */
+.tip {
+  position:fixed;
+  background:#ffffff;
+  border:1px solid #bfd4ea;
+  color:#24364d;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:11px;
+  pointer-events:none;
+  z-index:9999;
+  box-shadow:0 8px 30px rgba(0,0,0,.16);
+  line-height:1.8;
+  display:none;
+}
+.tip-title { font-weight:800; font-size:13px; color:var(--blue); margin-bottom:4px; }
+.tip-row { display:flex; gap:.5rem; justify-content:space-between; }
+.tip-row span:first-child { color:var(--muted); }
+.tip-row span:last-child { color:#24364d; font-weight:700; }
+
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-track { background:#eef3f8; border-radius:6px; }
+::-webkit-scrollbar-thumb { background:#b8c6d8; border-radius:6px; }
+
+.view-btn { font-size:10px; padding:6px 9px; }
+
+@media (max-width: 980px) {
+  .header { padding: 0 1rem; height: auto; min-height: 86px; flex-wrap: wrap; gap: 8px; }
+  .brand-text h1 { white-space: normal; font-size: 14px; }
+  .hstats { flex-wrap: wrap; gap: 6px; }
+  .hstat { min-width: 82px; padding: 7px 9px; }
+  .toolbar, .body { padding-left: 1rem; padding-right: 1rem; }
+}
+</style>
+</head>
+<body>
+<!-- DATA UPDATED FROM EXCEL: The_Future_Insurance_Obamacare_(3).xlsx; expanded rows: 175 -->
+
+
+<!-- TOOLTIP -->
+<div class="tip" id="tip"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-logo custom-logo">
+      <img src="data:image/png;base64,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" alt="The Future Insurance Logo">
+    </div>
+    <div class="brand-text">
+      <h1>ACA NATIONAL PRESENCE &amp; COMPENSATION MAP</h1>
+      <p>National Insight | Carriers Available | Partner PMMP Compensation</p>
+    </div>
+  </div>
+  <div class="hstats">
+    <div class="hstat"><span class="v" id="hStates">—</span><span class="l">States</span></div>
+    <div class="hstat"><span class="v" id="hCarriers">—</span><span class="l">Carriers</span></div>
+    <div class="hstat"><span class="v" id="hAvg">—</span><span class="l">Avg PMMP</span></div>
+    <div class="hstat"><span class="v" id="hMax">—</span><span class="l">Max PMMP</span></div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <span class="tb-label">Vista Mapa</span>
+  <button class="tb-btn active view-btn" id="btnCircles" onclick="setView('circles')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><circle cx="5" cy="8" r="2.5"/><circle cx="19" cy="8" r="2.5"/><circle cx="7" cy="19" r="2.5"/><circle cx="17" cy="19" r="2.5"/></svg>
+    Bubbles
+  </button>
+  <button class="tb-btn view-btn" id="btnHeat" onclick="setView('heat')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    Heat Map
+  </button>
+
+  <div class="tb-sep"></div>
+  <span class="tb-label">State</span>
+  <select class="tb-select" id="stateFilter" onchange="applyFilters()">
+    <option value="">Todas</option>
+  </select>
+
+  <span class="tb-label">Carrier</span>
+  <select class="tb-select" id="carrierFilter" onchange="applyFilters()">
+    <option value="">Todas</option>
+  </select>
+
+  <div class="tb-sep"></div>
+  <span class="tb-label">Partner PMMP</span>
+  <button class="tb-btn active" id="btnZero" onclick="toggleZero()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Include $0
+  </button>
+
+  <div class="tb-sep"></div>
+  <span class="tb-label">Paneles</span>
+  <button class="tb-btn active" id="btnSide" onclick="togglePanel('sidebar','btnSide')">◀ Carriers</button>
+  <button class="tb-btn active" id="btnRight" onclick="togglePanel('right','btnRight')">Stats ▶</button>
+  <button class="tb-btn active" id="btnTable" onclick="toggleTable()">⊟ Table</button>
+
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="resetView()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    Reset
+  </button>
+  <button class="tb-btn" onclick="exportCSV()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </button>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- SIDEBAR: Carrier List -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Todas</div>
+      <div id="carrierList"></div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="map-card">
+      <div class="map-header">
+        <span class="map-title">Carrier Presence & Avg Partner PMMP by State</span>
+        <div class="zoom-wrap">
+          <button class="zoom-btn" onclick="doZoom(1.3)">+</button>
+          <span class="zoom-lbl" id="zoomLbl">100%</span>
+          <button class="zoom-btn" onclick="doZoom(0.77)">−</button>
+          <button class="zoom-btn" onclick="resetMapZoom()" title="Fit">⤢</button>
+        </div>
+      </div>
+      <div id="map-wrap"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#f5a623"></div>$5+ PMMP</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00c2ff"></div>$3–5 PMMP</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a6fa5"></div>$1–3 PMMP</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2a3f5a"></div>$0 / Pending</div>
+        <div class="legend-item" style="margin-left:auto;font-size:10px;color:var(--sub)">Click state for details • Scroll to zoom</div>
+      </div>
+    </div>
+
+    <div class="table-strip" id="tableStrip">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>State</th><th># Carriers</th><th>Avg PMMP</th><th>Min</th><th>Max</th><th>Top Carrier</th><th>PMMP Level</th>
+          </tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right" id="right">
+    <div class="r-section">
+      <div class="r-title">State Detail</div>
+      <div class="state-detail" id="stateDetail">
+        <div class="sd-name" id="sdName">—</div>
+        <div id="sdCarriers"></div>
+      </div>
+      <div id="noStateMsg" style="font-size:11px;color:var(--sub);padding:4px">Click a state on the map</div>
+    </div>
+    <div class="r-section">
+      <div class="r-title">Top States by PMMP</div>
+      <div id="topStates"></div>
+    </div>
+    <div class="r-section">
+      <div class="r-title">Top Carriers by PMMP</div>
+      <div id="topCarriers"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA — All carriers from Excel, no Medicare
+// CareSource multi-state rows split properly
+// ══════════════════════════════════════════════
+const RAW_DATA = [
+  {Carrier:"Alliant Health Plans",State:"GA",PMMP:0},
+  {Carrier:"Alliant Health Plans",State:"TN",PMMP:0},
+  {Carrier:"Ambetter",State:"AL",PMMP:4},
+  {Carrier:"Ambetter",State:"AR",PMMP:4},
+  {Carrier:"Ambetter",State:"AZ",PMMP:4},
+  {Carrier:"Ambetter",State:"DE",PMMP:4},
+  {Carrier:"Ambetter",State:"FL",PMMP:4},
+  {Carrier:"Ambetter",State:"GA",PMMP:4},
+  {Carrier:"Ambetter",State:"IL",PMMP:4},
+  {Carrier:"Ambetter",State:"IN",PMMP:4},
+  {Carrier:"Ambetter",State:"KS",PMMP:4},
+  {Carrier:"Ambetter",State:"KY",PMMP:4},
+  {Carrier:"Ambetter",State:"LA",PMMP:4},
+  {Carrier:"Ambetter",State:"MI",PMMP:4},
+  {Carrier:"Ambetter",State:"MO",PMMP:4},
+  {Carrier:"Ambetter",State:"MS",PMMP:4},
+  {Carrier:"Ambetter",State:"NC",PMMP:4},
+  {Carrier:"Ambetter",State:"NE",PMMP:4},
+  {Carrier:"Ambetter",State:"NH",PMMP:4},
+  {Carrier:"Ambetter",State:"NJ",PMMP:4},
+  {Carrier:"Ambetter",State:"NM",PMMP:4},
+  {Carrier:"Ambetter",State:"NV",PMMP:4},
+  {Carrier:"Ambetter",State:"OH",PMMP:4},
+  {Carrier:"Ambetter",State:"OK",PMMP:4},
+  {Carrier:"Ambetter",State:"PA",PMMP:4},
+  {Carrier:"Ambetter",State:"SC",PMMP:4},
+  {Carrier:"Ambetter",State:"TN",PMMP:4},
+  {Carrier:"Ambetter",State:"TX",PMMP:4},
+  {Carrier:"Ambetter",State:"WA",PMMP:4},
+  {Carrier:"AmeriHealth Caritas",State:"DE",PMMP:2.3},
+  {Carrier:"AmeriHealth Caritas",State:"FL",PMMP:3},
+  {Carrier:"AmeriHealth Caritas",State:"NC",PMMP:2.3},
+  {Carrier:"AmeriHealth Caritas",State:"SC",PMMP:2.3},
+  {Carrier:"Anthem",State:"CA",PMMP:0},
+  {Carrier:"Anthem",State:"CO",PMMP:0},
+  {Carrier:"Anthem",State:"CT",PMMP:0},
+  {Carrier:"Anthem",State:"GA",PMMP:0},
+  {Carrier:"Anthem",State:"IN",PMMP:0},
+  {Carrier:"Anthem",State:"KY",PMMP:0},
+  {Carrier:"Anthem",State:"ME",PMMP:0},
+  {Carrier:"Anthem",State:"MO",PMMP:0},
+  {Carrier:"Anthem",State:"NH",PMMP:0},
+  {Carrier:"Anthem",State:"NV",PMMP:0},
+  {Carrier:"Anthem",State:"NY",PMMP:0},
+  {Carrier:"Anthem",State:"OH",PMMP:0},
+  {Carrier:"Anthem",State:"VA",PMMP:0},
+  {Carrier:"Anthem",State:"WI",PMMP:0},
+  {Carrier:"Antidote",State:"AZ",PMMP:3},
+  {Carrier:"Antidote",State:"OH",PMMP:3},
+  {Carrier:"Ascension",State:"IN",PMMP:4},
+  {Carrier:"Ascension",State:"KS",PMMP:4},
+  {Carrier:"Ascension",State:"MI",PMMP:4},
+  {Carrier:"Ascension",State:"TN",PMMP:4},
+  {Carrier:"Ascension",State:"TX",PMMP:4},
+  {Carrier:"Blue Cross Arizona  (Directo)",State:"AZ",PMMP:0},
+  {Carrier:"Blue Cross Blue shield (bajo un FMO)",State:"TN",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield (HCSC) (Directo)",State:"IL",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield (HCSC) (Directo)",State:"MT",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield (HCSC) (Directo)",State:"NM",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield (HCSC) (Directo)",State:"OK",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield (HCSC) (Directo)",State:"TX",PMMP:0},
+  {Carrier:"Blue Cross Blue Shield Kansas City  (Directo)",State:"MO",PMMP:0},
+  {Carrier:"Blue Shield CA (Directo)",State:"CA",PMMP:0},
+  {Carrier:"Capital Blue Cross",State:"PA",PMMP:0},
+  {Carrier:"CareSource",State:"GA",PMMP:3},
+  {Carrier:"CareSource",State:"IN",PMMP:3},
+  {Carrier:"CareSource",State:"KY",PMMP:3},
+  {Carrier:"CareSource",State:"NC",PMMP:3},
+  {Carrier:"CareSource",State:"OH",PMMP:3},
+  {Carrier:"CareSource",State:"WV",PMMP:3},
+  {Carrier:"Christus",State:"TX",PMMP:4},
+  {Carrier:"Cigna ACA",State:"AZ",PMMP:4},
+  {Carrier:"Cigna ACA",State:"CO",PMMP:4},
+  {Carrier:"Cigna ACA",State:"FL",PMMP:4},
+  {Carrier:"Cigna ACA",State:"GA",PMMP:4},
+  {Carrier:"Cigna ACA",State:"IL",PMMP:4},
+  {Carrier:"Cigna ACA",State:"IN",PMMP:4},
+  {Carrier:"Cigna ACA",State:"MS",PMMP:4},
+  {Carrier:"Cigna ACA",State:"NC",PMMP:4},
+  {Carrier:"Cigna ACA",State:"PA",PMMP:4},
+  {Carrier:"Cigna ACA",State:"SC",PMMP:4},
+  {Carrier:"Cigna ACA",State:"TN",PMMP:4},
+  {Carrier:"Cigna ACA",State:"TX",PMMP:4},
+  {Carrier:"Cigna ACA",State:"UT",PMMP:4},
+  {Carrier:"Cigna ACA",State:"VA",PMMP:4},
+  {Carrier:"Community Health Choice  TX",State:"TX",PMMP:4.5},
+  {Carrier:"Connecticare",State:"CT",PMMP:0},
+  {Carrier:"Health Partners",State:"MN",PMMP:0},
+  {Carrier:"Highmark",State:"DE",PMMP:4},
+  {Carrier:"Highmark",State:"NY",PMMP:4},
+  {Carrier:"Highmark",State:"PA",PMMP:4},
+  {Carrier:"Highmark",State:"WV",PMMP:4},
+  {Carrier:"Imperial Health Plans",State:"AZ",PMMP:5},
+  {Carrier:"Imperial Health Plans",State:"TX",PMMP:5},
+  {Carrier:"Imperial Health Plans",State:"UT",PMMP:5},
+  {Carrier:"Independence Blue Cross",State:"PA",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"CA",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"CO",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"GA",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"HI",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"OR",PMMP:0},
+  {Carrier:"Kaiser Permanente Directo (ya envie un request viernes 28)",State:"VA",PMMP:0},
+  {Carrier:"Medica",State:"AZ",PMMP:4},
+  {Carrier:"Medica",State:"IA",PMMP:4},
+  {Carrier:"Medica",State:"KS",PMMP:4},
+  {Carrier:"Medica",State:"MN",PMMP:3.25},
+  {Carrier:"Medica",State:"MO",PMMP:4},
+  {Carrier:"Medica",State:"ND",PMMP:3.25},
+  {Carrier:"Medica",State:"NE",PMMP:4},
+  {Carrier:"Medica",State:"OK",PMMP:4},
+  {Carrier:"Medica",State:"WI",PMMP:3.25},
+  {Carrier:"Molina",State:"CA",PMMP:4},
+  {Carrier:"Molina",State:"FL",PMMP:4},
+  {Carrier:"Molina",State:"ID",PMMP:4},
+  {Carrier:"Molina",State:"IL",PMMP:4},
+  {Carrier:"Molina",State:"KY",PMMP:4},
+  {Carrier:"Molina",State:"MI",PMMP:4},
+  {Carrier:"Molina",State:"MS",PMMP:4},
+  {Carrier:"Molina",State:"NM",PMMP:4},
+  {Carrier:"Molina",State:"NV",PMMP:4},
+  {Carrier:"Molina",State:"OH",PMMP:4},
+  {Carrier:"Molina",State:"SC",PMMP:4},
+  {Carrier:"Molina",State:"TX",PMMP:4},
+  {Carrier:"Molina",State:"UT",PMMP:4},
+  {Carrier:"Molina",State:"WA",PMMP:4},
+  {Carrier:"Molina",State:"WI",PMMP:4},
+  {Carrier:"OSCAR",State:"AZ",PMMP:4.5},
+  {Carrier:"OSCAR",State:"FL",PMMP:4.5},
+  {Carrier:"OSCAR",State:"GA",PMMP:4.5},
+  {Carrier:"OSCAR",State:"IA",PMMP:4.5},
+  {Carrier:"OSCAR",State:"IL",PMMP:4.5},
+  {Carrier:"OSCAR",State:"KS",PMMP:4.5},
+  {Carrier:"OSCAR",State:"MI",PMMP:4.5},
+  {Carrier:"OSCAR",State:"MO",PMMP:4.5},
+  {Carrier:"OSCAR",State:"NC",PMMP:4.5},
+  {Carrier:"OSCAR",State:"NE",PMMP:4.5},
+  {Carrier:"OSCAR",State:"NJ",PMMP:4.5},
+  {Carrier:"OSCAR",State:"OH",PMMP:4.5},
+  {Carrier:"OSCAR",State:"OK",PMMP:4.5},
+  {Carrier:"OSCAR",State:"PA",PMMP:4.5},
+  {Carrier:"OSCAR",State:"TN",PMMP:4.5},
+  {Carrier:"OSCAR",State:"TX",PMMP:4.5},
+  {Carrier:"OSCAR",State:"VA",PMMP:4.5},
+  {Carrier:"Regence Blue Shield",State:"UT",PMMP:0},
+  {Carrier:"Select Health",State:"CO",PMMP:3.1},
+  {Carrier:"Select Health",State:"ID",PMMP:3.1},
+  {Carrier:"Select Health",State:"NV",PMMP:3.1},
+  {Carrier:"Select Health",State:"UT",PMMP:3.1},
+  {Carrier:"Sentara Health Plans Directo",State:"VA",PMMP:0},
+  {Carrier:"UHC ACA",State:"AL",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"AZ",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"CO",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"FL",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"GA",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"IL",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"KS",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"LA",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"MD",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"MI",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"MO",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"MS",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"NC",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"NJ",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"NM",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"OH",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"OK",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"SC",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"TN",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"TX",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"VA",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"WA",PMMP:3.5},
+  {Carrier:"UHC ACA",State:"WI",PMMP:3.5},
+  {Carrier:"Wellpoint",State:"FL",PMMP:4},
+  {Carrier:"Wellpoint",State:"MD",PMMP:4},
+  {Carrier:"Wellpoint",State:"TX",PMMP:4}
+];
+
+// ══════════════════════════════════════════════
+// State coordinates (lat/lng for bubble map)
+// ══════════════════════════════════════════════
+const STATE_NAMES = {
+  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",
+  CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
+  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",
+  KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",
+  MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",
+  MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",
+  NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",
+  OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",
+  SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
+  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"
+};
+
+// Color scale
+function pmmpColor(v) {
+  if (v >= 5)   return '#f6b23c';
+  if (v >= 3)   return '#2b82c9';
+  if (v >= 1)   return '#69a9dc';
+  return '#b7d8f3';
+}
+function pmmpLabel(v) {
+  if (v >= 5)   return 'HIGH';
+  if (v >= 3)   return 'MED';
+  return 'LOW';
+}
+function pmmpBadge(v) {
+  if (v >= 5)   return 'b-hi';
+  if (v >= 3)   return 'b-mid';
+  return 'b-lo';
+}
+function fmt(v) { return '$' + parseFloat(v||0).toFixed(2); }
+function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function ge(id) { return document.getElementById(id); }
+
+// ══════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════
+let filtered = [...RAW_DATA];
+let showZero = true;
+let viewMode = 'circles';
+let tableVisible = true;
+let selectedState = null;
+let selectedCarrier = null;
+let svgEl, gEl, zoomBehavior, currentZoom = 1;
+let projection, path;
+
+// ══════════════════════════════════════════════
+// BUILD STATE MAP
+// ══════════════════════════════════════════════
+function buildStateMap(data) {
+  const m = {};
+  data.forEach(r => {
+    const s = r.State;
+    if (!m[s]) m[s] = { carriers: {}, pmmpVals: [] };
+    if (!m[s].carriers[r.Carrier]) m[s].carriers[r.Carrier] = [];
+    m[s].carriers[r.Carrier].push(r.PMMP);
+    m[s].pmmpVals.push(r.PMMP);
+  });
+  return m;
+}
+
+// ══════════════════════════════════════════════
+// CARRIER LIST SIDEBAR
+// ══════════════════════════════════════════════
+function buildCarrierList() {
+  const carriers = {};
+  RAW_DATA.forEach(r => {
+    if (!carriers[r.Carrier]) carriers[r.Carrier] = [];
+    carriers[r.Carrier].push(r.PMMP);
+  });
+  const sorted = Object.entries(carriers).sort((a,b) => avg(b[1]) - avg(a[1]));
+  const list = ge('carrierList');
+  list.innerHTML = '';
+  sorted.forEach(([name, vals]) => {
+    const a = avg(vals);
+    const div = document.createElement('div');
+    div.className = 'carrier-chip';
+    div.innerHTML = `
+      <div class="dot" style="background:${pmmpColor(a)}"></div>
+      <span class="cname" title="${name}">${name}</span>
+      <span class="cpmmp">${a>0?fmt(a):'$0'}</span>`;
+    div.onclick = () => filterByCarrier(name);
+    list.appendChild(div);
+  });
+
+  // Populate carrier filter dropdown
+  const sel = ge('carrierFilter');
+  sel.innerHTML = '<option value="">Todas</option>';
+  sorted.forEach(([name]) => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+}
+
+function filterByCarrier(name) {
+  selectedCarrier = selectedCarrier === name ? null : name;
+  ge('carrierFilter').value = selectedCarrier || '';
+  // highlight chip
+  document.querySelectorAll('.carrier-chip').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('.cname').title === selectedCarrier);
+  });
+  applyFilters();
+}
+
+// ══════════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════════
+function applyFilters() {
+  const sf = ge('stateFilter').value;
+  const cf = ge('carrierFilter').value;
+  selectedCarrier = cf || null;
+
+  filtered = RAW_DATA.filter(r => {
+    if (sf && r.State !== sf) return false;
+    if (cf && r.Carrier !== cf) return false;
+    if (!showZero && r.PMMP === 0) return false;
+    return true;
+  });
+  refreshAll();
+}
+
+function toggleZero() {
+  showZero = !showZero;
+  ge('btnZero').classList.toggle('active', showZero);
+  ge('btnZero').textContent = showZero ? '👁 Include $0' : '👁 Exclude $0';
+  applyFilters();
+}
+
+// ══════════════════════════════════════════════
+// HEADER STATS
+// ══════════════════════════════════════════════
+function updateStats() {
+  const sm = buildStateMap(filtered);
+  const states = Object.keys(sm).length;
+  const carriers = new Set(filtered.map(r=>r.Carrier)).size;
+  const allPmmp = filtered.map(r=>r.PMMP);
+  const a = avg(allPmmp);
+  const mx = Math.max(...allPmmp, 0);
+  ge('hStates').textContent = states;
+  ge('hCarriers').textContent = carriers;
+  ge('hAvg').textContent = fmt(a);
+  ge('hMax').textContent = fmt(mx);
+}
+
+// ══════════════════════════════════════════════
+// TABLE
+// ══════════════════════════════════════════════
+function updateTable() {
+  const sm = buildStateMap(filtered);
+  const rows = Object.entries(sm).sort((a,b) => avg(b[1].pmmpVals) - avg(a[1].pmmpVals));
+  ge('tBody').innerHTML = rows.map(([s, d]) => {
+    const a = avg(d.pmmpVals);
+    const mn = Math.min(...d.pmmpVals);
+    const mx = Math.max(...d.pmmpVals);
+    const topC = Object.entries(d.carriers).sort((a,b) => avg(b[1])-avg(a[1]))[0];
+    const cnt = Object.keys(d.carriers).length;
+    return `<tr onclick="clickTableState('${s}')">
+      <td><strong>${s}</strong> <span style="color:var(--sub);font-size:10px">${STATE_NAMES[s]||''}</span></td>
+      <td style="text-align:center">${cnt}</td>
+      <td><strong style="color:${pmmpColor(a)}">${fmt(a)}</strong></td>
+      <td style="color:var(--sub)">${fmt(mn)}</td>
+      <td style="color:var(--gold)">${fmt(mx)}</td>
+      <td style="color:var(--sub);font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${topC?topC[0]:'—'}</td>
+      <td><span class="badge ${pmmpBadge(a)}">${pmmpLabel(a)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function clickTableState(s) {
+  ge('stateFilter').value = s;
+  applyFilters();
+  showStateDetail(s);
+}
+
+// ══════════════════════════════════════════════
+// RIGHT PANEL
+// ══════════════════════════════════════════════
+function updateRight() {
+  const sm = buildStateMap(filtered);
+
+  // Top states
+  const stArr = Object.entries(sm).map(([k,v]) => ({k, v:avg(v.pmmpVals)}))
+    .sort((a,b)=>b.v-a.v).slice(0,7);
+  ge('topStates').innerHTML = stArr.map((it,i) => `
+    <div class="top-item" onclick="clickTableState('${it.k}')">
+      <span class="rk">${i+1}</span>
+      <span class="nm">${STATE_NAMES[it.k]||it.k}</span>
+      <span class="vl">${fmt(it.v)}</span>
+    </div>`).join('');
+
+  // Top carriers
+  const cm = {};
+  filtered.forEach(r => { if(!cm[r.Carrier]) cm[r.Carrier]=[]; cm[r.Carrier].push(r.PMMP); });
+  const cArr = Object.entries(cm).map(([k,v])=>({k,v:avg(v)})).sort((a,b)=>b.v-a.v).slice(0,7);
+  ge('topCarriers').innerHTML = cArr.map((it,i) => `
+    <div class="top-item" onclick="filterByCarrier('${it.k.replace(/'/g,"\\'")}')">
+      <span class="rk">${i+1}</span>
+      <span class="nm" title="${it.k}">${it.k}</span>
+      <span class="vl">${fmt(it.v)}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// STATE DETAIL
+// ══════════════════════════════════════════════
+function showStateDetail(s) {
+  selectedState = s;
+  const sm = buildStateMap(filtered);
+  const d = sm[s];
+  if (!d) { ge('stateDetail').classList.remove('show'); ge('noStateMsg').style.display=''; return; }
+  ge('noStateMsg').style.display = 'none';
+  ge('stateDetail').classList.add('show');
+  ge('sdName').textContent = `${STATE_NAMES[s]||s} (${s})`;
+
+  const entries = Object.entries(d.carriers).sort((a,b)=>avg(b[1])-avg(a[1]));
+  ge('sdCarriers').innerHTML = entries.map(([c,vals]) => {
+    const a = avg(vals);
+    return `<div class="sd-carrier">
+      <span>${c}</span>
+      <span class="${a>0?'sdc-pmmp':'sdc-zero'}">${fmt(a)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// MAP — D3 Choropleth + Bubbles
+// ══════════════════════════════════════════════
+function initMap() {
+  const wrap = ge('map-wrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+
+  svgEl = d3.select('#map-wrap').append('svg')
+    .attr('width', W).attr('height', H);
+  gEl = svgEl.append('g');
+
+  projection = d3.geoAlbersUsa()
+    .scale(Math.min(W * 1.2, 900))
+    .translate([W/2, H/2]);
+  path = d3.geoPath().projection(projection);
+
+  zoomBehavior = d3.zoom()
+    .scaleExtent([0.5, 8])
+    .on('zoom', e => {
+      gEl.attr('transform', e.transform);
+      currentZoom = e.transform.k;
+      ge('zoomLbl').textContent = Math.round(currentZoom*100) + '%';
+    });
+  svgEl.call(zoomBehavior);
+
+  loadMap();
+}
+
+function loadMap() {
+  fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+    .then(r => r.json())
+    .then(us => {
+      const states = topojson.feature(us, us.objects.states);
+      const stateFips = {
+        "01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT",
+        "10":"DE","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN",
+        "19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA",
+        "26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV",
+        "33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH",
+        "40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN",
+        "48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI",
+        "56":"WY"
+      };
+
+      gEl.selectAll('.state-path').remove();
+      gEl.selectAll('.bubble').remove();
+      gEl.selectAll('.state-label').remove();
+
+      const sm = buildStateMap(filtered);
+
+      // Draw states
+      gEl.selectAll('.state-path')
+        .data(states.features)
+        .enter().append('path')
+        .attr('class', 'state-path')
+        .attr('d', path)
+        .attr('fill', d => {
+          const abbr = stateFips[String(d.id).padStart(2,'0')];
+          if (!abbr || !sm[abbr]) return '#eceff3';
+          const a = avg(sm[abbr].pmmpVals);
+          if (viewMode === 'heat') {
+            if (a >= 5) return 'rgba(246,178,60,0.55)';
+            if (a >= 3) return 'rgba(43,130,201,0.35)';
+            if (a >= 1) return 'rgba(105,169,220,0.35)';
+            return 'rgba(183,216,243,0.35)';
+          }
+          return sm[abbr] ? 'rgba(43,130,201,0.16)' : '#eceff3';
+        })
+        .attr('stroke', d => {
+          const abbr = stateFips[String(d.id).padStart(2,'0')];
+          return abbr && sm[abbr] ? 'rgba(43,130,201,0.55)' : 'rgba(160,170,180,0.35)';
+        })
+        .attr('stroke-width', d => {
+          const abbr = stateFips[String(d.id).padStart(2,'0')];
+          return abbr === selectedState ? 2 : 0.8;
+        })
+        .style('cursor', 'pointer')
+        .on('click', (e, d) => {
+          const abbr = stateFips[String(d.id).padStart(2,'0')];
+          if (abbr && sm[abbr]) { showStateDetail(abbr); drawMap(); }
+        })
+        .on('mouseover', (e, d) => {
+          const abbr = stateFips[String(d.id).padStart(2,'0')];
+          if (!abbr || !sm[abbr]) return;
+          const sd = sm[abbr];
+          const a = avg(sd.pmmpVals);
+          const cnt = Object.keys(sd.carriers).length;
+          const tip = ge('tip');
+          tip.style.display = 'block';
+          tip.innerHTML = `<div class="tip-title">${STATE_NAMES[abbr]||abbr}</div>
+            <div class="tip-row"><span>Carriers:</span><span>${cnt}</span></div>
+            <div class="tip-row"><span>Avg PMMP:</span><span style="color:${pmmpColor(a)}">${fmt(a)}</span></div>
+            <div class="tip-row"><span>Max PMMP:</span><span style="color:var(--gold)">${fmt(Math.max(...sd.pmmpVals))}</span></div>`;
+        })
+        .on('mousemove', e => {
+          ge('tip').style.left = (e.clientX+14)+'px';
+          ge('tip').style.top  = (e.clientY-10)+'px';
+        })
+        .on('mouseout', () => { ge('tip').style.display='none'; });
+
+      // Bubbles
+      if (viewMode === 'circles') {
+        const bubbleData = Object.entries(sm).map(([s,d]) => {
+          const centroid = projection(stateCentroid(s));
+          if (!centroid) return null;
+          return { s, d, centroid, a: avg(d.pmmpVals), cnt: Object.keys(d.carriers).length };
+        }).filter(Boolean);
+
+        const maxA = Math.max(...bubbleData.map(b=>b.a), 0.01);
+        const rScale = d3.scaleSqrt().domain([0, maxA]).range([4, 24]);
+
+        gEl.selectAll('.bubble')
+          .data(bubbleData)
+          .enter().append('circle')
+          .attr('class', 'bubble')
+          .attr('cx', d => d.centroid[0])
+          .attr('cy', d => d.centroid[1])
+          .attr('r', d => d.a > 0 ? rScale(d.a) : 5)
+          .attr('fill', d => pmmpColor(d.a))
+          .attr('fill-opacity', d => d.a > 0 ? 0.75 : 0.3)
+          .attr('stroke', d => pmmpColor(d.a))
+          .attr('stroke-width', 1.5)
+          .attr('stroke-opacity', 0.9)
+          .style('cursor','pointer')
+          .on('click', (e, d) => { showStateDetail(d.s); drawMap(); })
+          .on('mouseover', (e, d) => {
+            const tip = ge('tip');
+            tip.style.display = 'block';
+            const carriers = Object.entries(d.d.carriers)
+              .sort((a,b)=>avg(b[1])-avg(a[1]))
+              .slice(0,5)
+              .map(([c,v])=>`<div class="tip-row"><span>${c}</span><span style="color:${pmmpColor(avg(v))}">${fmt(avg(v))}</span></div>`)
+              .join('');
+            tip.innerHTML = `<div class="tip-title">${STATE_NAMES[d.s]||d.s} (${d.s})</div>
+              <div class="tip-row"><span>Carriers:</span><span>${d.cnt}</span></div>
+              <div class="tip-row"><span>Avg PMMP:</span><span style="color:${pmmpColor(d.a)}">${fmt(d.a)}</span></div>
+              <hr style="border-color:rgba(255,255,255,.1);margin:5px 0">
+              ${carriers}`;
+          })
+          .on('mousemove', e => {
+            ge('tip').style.left = (e.clientX+14)+'px';
+            ge('tip').style.top  = (e.clientY-10)+'px';
+          })
+          .on('mouseout', () => { ge('tip').style.display='none'; });
+      }
+    });
+}
+
+// Approximate state centroids
+const STATE_CENTROIDS = {
+  AL:[-86.8,32.8],AK:[-153,64],AZ:[-111.7,34.3],AR:[-92.4,34.9],CA:[-119.4,36.8],
+  CO:[-105.5,39],CT:[-72.7,41.6],DE:[-75.5,39],FL:[-81.5,27.8],GA:[-83.4,32.7],
+  HI:[-157,20.3],ID:[-114.5,44.4],IL:[-89.2,40],IN:[-86.3,40],IA:[-93.1,41.9],
+  KS:[-98.4,38.5],KY:[-84.3,37.8],LA:[-91.8,31],ME:[-69.4,44.7],MD:[-76.8,39],
+  MA:[-71.5,42.2],MI:[-84.7,44.3],MN:[-94.3,46.4],MS:[-89.7,32.7],MO:[-92.5,38.4],
+  MT:[-110.4,46.9],NE:[-98.3,41.5],NV:[-116.4,39],NH:[-71.6,43.7],NJ:[-74.7,40],
+  NM:[-106,34.3],NY:[-75.5,42.8],NC:[-79.4,35.6],ND:[-100.5,47.5],OH:[-82.9,40.4],
+  OK:[-97.5,35.5],OR:[-120.6,43.9],PA:[-77.2,40.9],RI:[-71.5,41.7],SC:[-80.9,33.8],
+  SD:[-100,44.4],TN:[-86.5,35.9],TX:[-99.3,31.5],UT:[-111.1,39.4],VT:[-72.7,44],
+  VA:[-78.7,37.5],WA:[-120.5,47.5],WV:[-80.7,38.6],WI:[-89.8,44.5],WY:[-107.6,43]
+};
+
+function stateCentroid(abbr) {
+  const c = STATE_CENTROIDS[abbr];
+  return c ? c : null;
+}
+
+// ══════════════════════════════════════════════
+// ZOOM CONTROLS
+// ══════════════════════════════════════════════
+function doZoom(factor) {
+  svgEl.transition().duration(300).call(zoomBehavior.scaleBy, factor);
+}
+function resetMapZoom() {
+  svgEl.transition().duration(400).call(zoomBehavior.transform, d3.zoomIdentity);
+}
+
+// ══════════════════════════════════════════════
+// VIEW MODE
+// ══════════════════════════════════════════════
+function setView(mode) {
+  viewMode = mode;
+  ge('btnCircles').classList.toggle('active', mode==='circles');
+  ge('btnHeat').classList.toggle('active', mode==='heat');
+  drawMap();
+}
+
+// ══════════════════════════════════════════════
+// PANELS
+// ══════════════════════════════════════════════
+function togglePanel(id, btnId) {
+  const el = ge(id);
+  el.classList.toggle('collapsed');
+  ge(btnId).classList.toggle('active', !el.classList.contains('collapsed'));
+}
+function toggleTable() {
+  tableVisible = !tableVisible;
+  ge('tableStrip').style.display = tableVisible ? '' : 'none';
+  ge('btnTable').classList.toggle('active', tableVisible);
+}
+
+// ══════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════
+function resetView() {
+  ge('stateFilter').value = '';
+  ge('carrierFilter').value = '';
+  selectedCarrier = null;
+  selectedState = null;
+  showZero = true;
+  ge('btnZero').classList.add('active');
+  ge('btnZero').textContent = '👁 Include $0';
+  document.querySelectorAll('.carrier-chip').forEach(el => el.classList.remove('selected'));
+  filtered = [...RAW_DATA];
+  refreshAll();
+  resetMapZoom();
+}
+
+// ══════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════
+function exportCSV() {
+  const rows = [['State','State Name','Carrier','Partner PMMP']];
+  filtered.forEach(r => rows.push([r.State, STATE_NAMES[r.State]||'', r.Carrier, r.PMMP]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'TheFuture_ACA_Data.csv';
+  a.click();
+}
+
+// ══════════════════════════════════════════════
+// POPULATE STATE FILTER
+// ══════════════════════════════════════════════
+function populateStateFilter() {
+  const states = [...new Set(RAW_DATA.map(r=>r.State))].sort();
+  const sel = ge('stateFilter');
+  sel.innerHTML = '<option value="">Todas</option>';
+  states.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = `${s} — ${STATE_NAMES[s]||s}`;
+    sel.appendChild(o);
+  });
+}
+
+// ══════════════════════════════════════════════
+// DRAW MAP (re-render)
+// ══════════════════════════════════════════════
+function drawMap() { loadMap(); }
+
+// ══════════════════════════════════════════════
+// REFRESH ALL
+// ══════════════════════════════════════════════
+function refreshAll() {
+  updateStats();
+  updateTable();
+  updateRight();
+  drawMap();
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  populateStateFilter();
+  buildCarrierList();
+  initMap();
+  refreshAll();
+});
+
+window.addEventListener('resize', () => {
+  const wrap = ge('map-wrap');
+  svgEl.attr('width', wrap.clientWidth).attr('height', wrap.clientHeight);
+  projection.translate([wrap.clientWidth/2, wrap.clientHeight/2]);
+  drawMap();
+});
+</script>
+</body>
+</html>
